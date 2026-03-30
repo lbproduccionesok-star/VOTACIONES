@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show de Cantantes - Votación Virtual</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* LOGIN DEL ADMIN - OCULTO POR DEFECTO */
+        .admin-login {
+            background: rgba(255,255,255,0.95);
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            text-align: center;
+            display: none;
+        }
+
+        .admin-login.active {
+            display: block;
+        }
+
+        .admin-login h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .admin-login input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .admin-login button {
+            width: 100%;
+            padding: 12px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .admin-login button:hover {
+            background: #1976D2;
+        }
+
+        .error-msg {
+            color: #f44336;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-msg.active {
+            display: block;
+        }
+
+        /* PANEL DE ADMIN COMPLETO */
+        .admin-panel {
+            display: none;
+            background: rgba(255,255,255,0.98);
+            max-width: 1200px;
+            margin: 20px auto 30px;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .admin-panel.active {
+            display: block;
+        }
+
+        /* CONTROL DE VOTACIÓN */
+        .voting-control {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .voting-control h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .voting-status {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .voting-status.open {
+            background: #4CAF50;
+            animation: pulse-green 2s infinite;
+        }
+
+        .voting-status.closed {
+            background: #f44336;
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            50% { box-shadow: 0 0 0 20px rgba(76, 175, 80, 0); }
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
+            50% { box-shadow: 0 0 0 20px rgba(244, 67, 54, 0); }
+        }
+
+        .voting-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .btn-vote-control {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-open {
+            background: #4CAF50;
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-open:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .btn-close {
+            background: #f44336;
+            color: white;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .btn-close:hover {
+            background: #d32f2f;
+            transform: scale(1.05);
+        }
+
+        .admin-section {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .admin-section h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #45a049;
+        }
+
+        .btn-edit {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #1976D2;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+
+        .btn-save {
+            background: #FF9800;
+            color: white;
+            font-size: 1.1em;
+            padding: 15px 30px;
+        }
+
+        .btn-save:hover {
+            background: #F57C00;
+        }
+
+        .btn-logout {
+            background: #9E9E9E;
+            color: white;
+        }
+
+        .btn-logout:hover {
+            background: #757575;
+        }
+
+        .artists-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .artists-table th, .artists-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .artists-table th {
+            background: #2196F3;
+            color: white;
+        }
+
+        .artists-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .artists-table img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .status-select {
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3.5em;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 3px 3px 6px rgba(0,0,0,0.3), 0 0 10px #fff; }
+            to { text-shadow: 3px 3px 6px rgba(0,0,0,0.3), 0 0 20px #ffeb3b, 0 0 30px #ffeb3b; }
+        }
+
+        .header h2 {
+            font-size: 1.8em;
+            font-weight: 300;
+            opacity: 0.9;
+        }
+
+        /* MENSAJE DE ESTADO DE VOTACIÓN */
+        .voting-message {
+            max-width: 800px;
+            margin: 0 auto 30px;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .voting-message.open {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .voting-message.closed {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .voting-message .icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .voting-message .subtext {
+            font-size: 0.7em;
+            font-weight: normal;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 20px;
+        }
+
+        .artist-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            opacity: 1;
+        }
+
+        .artist-card.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
+
+        .artist-card:hover:not(.disabled) {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 10;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+
+        .status-badge.safe {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-badge.sentenced {
+            background: #FFC107;
+            color: #333;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .artist-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .artist-info {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .artist-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .vote-btn {
+            display: inline-block;
+            padding: 15px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .vote-btn.safe {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .vote-btn.safe:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: scale(1.05);
+        }
+
+        .vote-btn.sentenced {
+            background: linear-gradient(135deg, #FFC107, #FFB300);
+            color: #333;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+            animation: shake 2s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+            20%, 40%, 60%, 80% { transform: translateX(3px); }
+        }
+
+        .vote-btn.sentenced:hover {
+            background: linear-gradient(135deg, #FFB300, #FFA000);
+            box-shadow: 0 6px 20px rgba(255, 193, 7, 0.6);
+        }
+
+        .vote-btn.disabled {
+            background: #9E9E9E !important;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        .sentenced-label {
+            background: #FFC107;
+            color: #333;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        .price-tag {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .price-tag.sentenced {
+            color: #FF5722;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 40px;
+            margin-top: 30px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5em; }
+            .header h2 { font-size: 1.3em; }
+            .container { grid-template-columns: 1fr; }
+            .artists-table { font-size: 0.8em; }
+            .artists-table th, .artists-table td { padding: 5px; }
+            .voting-message { font-size: 1.2em; padding: 20px; }
+            .voting-status { font-size: 1.5em; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN DEL ADMIN -->
+    <div class="admin-login" id="adminLogin">
+        <h3>🔐 Acceso Administración</h3>
+        <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">
+            Bienvenido al panel de control
+        </p>
+        <input type="password" id="adminPass" placeholder="Escribí la contraseña..." onkeypress="if(event.key==='Enter')entrarAdmin()">
+        <button onclick="entrarAdmin()">ENTRAR AL PANEL</button>
+        <div class="error-msg" id="errorMsg">❌ Contraseña incorrecta</div>
+    </div>
+
+    <!-- PANEL DE ADMIN COMPLETO -->
+    <div class="admin-panel" id="adminPanel">
+        
+        <!-- CONTROL DE VOTACIÓN -->
+        <div class="voting-control">
+            <h3>🎛️ Control de Votación</h3>
+            <div class="voting-status open" id="adminVotingStatus">
+                ✅ VOTACIÓN ABIERTA
+            </div>
+            <div class="voting-buttons">
+                <button class="btn-vote-control btn-open" onclick="abrirVotacion()">
+                    🟢 ABRIR VOTACIÓN
+                </button>
+                <button class="btn-vote-control btn-close" onclick="cerrarVotacion()">
+                    🔴 CERRAR VOTACIÓN
+                </button>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 1: AGREGAR NUEVO PARTICIPANTE -->
+        <div class="admin-section">
+            <h4>➕ Agregar Nuevo Participante</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre y Apellido</label>
+                    <input type="text" id="newName" placeholder="Ej: María Fernández">
+                </div>
+                <div class="form-group">
+                    <label>URL de la Foto</label>
+                    <input type="text" id="newImage" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Link MercadoPago (Precio Normal)</label>
+                    <input type="text" id="newLinkSafe" placeholder="https://mpago.la/...">
+                </div>
+                <div class="form-group">
+                    <label>Link MercadoPago (Precio Sentenciado)</label>
+                    <input type="text" id="newLinkSentenced" placeholder="https://mpago.la/...">
+                </div>
+            </div>
+            <button class="btn btn-add" onclick="addArtist()">➕ Agregar Participante</button>
+        </div>
+
+        <!-- SECCIÓN 2: GESTIONAR PARTICIPANTES EXISTENTES -->
+        <div class="admin-section">
+            <h4>✏️ Gestionar Participantes</h4>
+            <table class="artists-table">
+                <thead>
+                    <tr>
+                        <th>Foto</th>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th>Link Normal</th>
+                        <th>Link Sentenciado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTableBody">
+                    <!-- Se llena con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SECCIÓN 3: GUARDAR TODO -->
+        <div class="admin-section" style="border-bottom: none; text-align: center;">
+            <button class="btn btn-save" onclick="saveAllChanges()">💾 GUARDAR TODOS LOS CAMBIOS</button>
+            <button class="btn btn-logout" onclick="salirAdmin()">🚪 Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <!-- VISTA PÚBLICA -->
+    <div class="header">
+        <h1>🎤 Show de Cantantes 🎤</h1>
+        <h2>Votaciones Virtuales</h2>
+    </div>
+
+    <!-- MENSAJE DE ESTADO DE VOTACIÓN -->
+    <div class="voting-message open" id="publicVotingMessage">
+        <div class="icon">🗳️</div>
+        <div>✅ VOTACIÓN ABIERTA</div>
+        <div class="subtext">¡Votá ahora por tu artista favorito!</div>
+    </div>
+
+    <div class="container" id="artistsContainer">
+        <!-- Se llena con JavaScript -->
+    </div>
+
+    <div class="footer">
+        <p>© 2026 Show de Cantantes - Vota por tu artista favorito</p>
+    </div>
+
+    <script>
+        // CONTRASEÑA DEL ADMIN
+        const ADMIN_PASSWORD = "@votacioncantantesshow";
+
+        // ESTADO DE VOTACIÓN
+        let votingOpen = JSON.parse(localStorage.getItem('votingOpen'));
+        if (votingOpen === null) votingOpen = true;
+
+        // DATOS INICIALES (SIN VOTOS)
+        let artistsData = JSON.parse(localStorage.getItem('artistsData')) || [
+            {
+                id: 1,
+                name: "María Fernández",
+                image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
+                sentenced: false,
+                mpLinkSafe: "https://mpago.la/XXXXX1-safe",
+                mpLinkSentenced: "https://mpago.la/XXXXX1-premium"
+            },
+            {
+                id: 2,
+                name: "Carlos Rodríguez",
+                image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
+                sentenced: false,
+                mpLinkSafe: "https://mpago.la/XXXXX2-safe",
+                mpLinkSentenced: "https://mpago.la/XXXXX2-premium"
+            },
+            {
+                id: 3,
+                name: "Ana Martínez",
+                image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop",
+                sentenced: true,
+                mpLinkSafe: "https://mpago.la/XXXXX3-safe",
+                mpLinkSentenced: "https://mpago.la/XXXXX3-premium"
+            }
+        ];
+
+        let nextId = Math.max(...artistsData.map(a => a.id), 0) + 1;
+
+        // OPCIÓN 1: TECLA SECRETA (Ctrl + Alt + Z)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.altKey && e.key === 'z') {
+                e.preventDefault();
+                mostrarLogin();
+            }
+        });
+
+        // OPCIÓN 2: URL SECRETA (#admin)
+        if (window.location.hash === '#admin') {
+            setTimeout(mostrarLogin, 500);
+        }
+
+        // MOSTRAR LOGIN
+        function mostrarLogin() {
+            const login = document.getElementById('adminLogin');
+            login.classList.add('active');
+            login.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('adminPass').focus();
+        }
+
+        // ENTRAR AL ADMIN
+        function entrarAdmin() {
+            const pass = document.getElementById('adminPass').value;
+            const errorMsg = document.getElementById('errorMsg');
+            
+            if (pass === ADMIN_PASSWORD) {
+                document.getElementById('adminLogin').classList.remove('active');
+                document.getElementById('adminPanel').classList.add('active');
+                updateAdminVotingStatus();
+                renderAdminTable();
+            } else {
+                errorMsg.classList.add('active');
+            }
+        }
+
+        // SALIR DEL ADMIN
+        function salirAdmin() {
+            document.getElementById('adminPanel').classList.remove('active');
+            document.getElementById('adminPass').value = '';
+            if (window.location.hash === '#admin') {
+                history.pushState("", document.title, window.location.pathname + window.location.search);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ABRIR VOTACIÓN
+        function abrirVotacion() {
+            votingOpen = true;
+            localStorage.setItem('votingOpen', JSON.stringify(true));
+            updateAdminVotingStatus();
+            renderPublicView();
+            alert('✅ ¡VOTACIÓN ABIERTA!');
+        }
+
+        // CERRAR VOTACIÓN
+        function cerrarVotacion() {
+            votingOpen = false;
+            localStorage.setItem('votingOpen', JSON.stringify(false));
+            updateAdminVotingStatus();
+            updatePublicVotingStatus();
+            alert('🔴 VOTACIÓN CERRADA PARCIALMENTE');
+        }
+
+        // ACTUALIZAR ESTADO EN PANEL ADMIN
+        function updateAdminVotingStatus() {
+            const statusDiv = document.getElementById('adminVotingStatus');
+            if (votingOpen) {
+                statusDiv.textContent = '✅ VOTACIÓN ABIERTA';
+                statusDiv.className = 'voting-status open';
+            } else {
+                statusDiv.textContent = '🔴 VOTACIÓN CERRADA';
+                statusDiv.className = 'voting-status closed';
+            }
+        }
+
+        // ACTUALIZAR MENSAJE PÚBLICO
+        function updatePublicVotingStatus() {
+            const messageDiv = document.getElementById('publicVotingMessage');
+            const container = document.getElementById('artistsContainer');
+            
+            if (votingOpen) {
+                messageDiv.className = 'voting-message open';
+                messageDiv.innerHTML = `
+                    <div class="icon">🗳️</div>
+                    <div>✅ VOTACIÓN ABIERTA</div>
+                    <div class="subtext">¡Votá ahora por tu artista favorito!</div>
+                `;
+                const cards = container.querySelectorAll('.artist-card');
+                cards.forEach(card => card.classList.remove('disabled'));
+                const buttons = container.querySelectorAll('.vote-btn');
+                buttons.forEach(btn => {
+                    btn.classList.remove('disabled');
+                    btn.style.pointerEvents = 'auto';
+                    btn.textContent = 'VOTAR';
+                });
+            } else {
+                messageDiv.className = 'voting-message closed';
+                messageDiv.innerHTML = `
+                    <div class="icon">⛔</div>
+                    <div>🔴 VOTACIÓN CERRADA PARCIALMENTE</div>
+                    <div class="subtext">La votación se reanudará pronto</div>
+                `;
+                const cards = container.querySelectorAll('.artist-card');
+                cards.forEach(card => card.classList.add('disabled'));
+                const buttons = container.querySelectorAll('.vote-btn');
+                buttons.forEach(btn => {
+                    btn.classList.add('disabled');
+                    btn.style.pointerEvents = 'none';
+                    btn.textContent = 'VOTACIÓN PAUSADA';
+                });
+            }
+        }
+
+        // AGREGAR ARTISTA
+        function addArtist() {
+            const name = document.getElementById('newName').value.trim();
+            const image = document.getElementById('newImage').value.trim();
+            const linkSafe = document.getElementById('newLinkSafe').value.trim();
+            const linkSentenced = document.getElementById('newLinkSentenced').value.trim();
+
+            if (!name || !image || !linkSafe || !linkSentenced) {
+                alert('⚠️ Completá todos los campos');
+                return;
+            }
+
+            const newArtist = {
+                id: nextId++,
+                name: name,
+                image: image,
+                sentenced: false,
+                mpLinkSafe: linkSafe,
+                mpLinkSentenced: linkSentenced
+            };
+
+            artistsData.push(newArtist);
+            
+            document.getElementById('newName').value = '';
+            document.getElementById('newImage').value = '';
+            document.getElementById('newLinkSafe').value = '';
+            document.getElementById('newLinkSentenced').value = '';
+
+            renderAdminTable();
+            renderPublicView();
+            alert('✅ Participante agregado. Recordá guardar los cambios al final.');
+        }
+
+        // RENDERIZAR TABLA ADMIN
+        function renderAdminTable() {
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = '';
+
+            artistsData.forEach(artist => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><img src="${artist.image}" alt="${artist.name}"></td>
+                    <td><input type="text" value="${artist.name}" id="name-${artist.id}" style="width: 100%;"></td>
+                    <td>
+                        <select class="status-select" id="status-${artist.id}">
+                            <option value="false" ${!artist.sentenced ? 'selected' : ''}>🟢 SEGURO</option>
+                            <option value="true" ${artist.sentenced ? 'selected' : ''}>🟡 SENTENCIADO</option>
+                        </select>
+                    </td>
+                    <td><input type="text" value="${artist.mpLinkSafe}" id="safe-${artist.id}" style="width: 100%;"></td>
+                    <td><input type="text" value="${artist.mpLinkSentenced}" id="sentenced-${artist.id}" style="width: 100%;"></td>
+                    <td>
+                        <button class="btn btn-edit" onclick="updateArtist(${artist.id})">💾 Guardar</button>
+                        <button class="btn btn-delete" onclick="deleteArtist(${artist.id})">🗑️ Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ACTUALIZAR ARTISTA
+        function updateArtist(id) {
+            const artist = artistsData.find(a => a.id === id);
+            if (artist) {
+                artist.name = document.getElementById(`name-${id}`).value;
+                artist.sentenced = document.getElementById(`status-${id}`).value === 'true';
+                artist.mpLinkSafe = document.getElementById(`safe-${id}`).value;
+                artist.mpLinkSentenced = document.getElementById(`sentenced-${id}`).value;
+                
+                renderPublicView();
+                alert(`✅ ${artist.name} actualizado`);
+            }
+        }
+
+        // ELIMINAR ARTISTA
+        function deleteArtist(id) {
+            if (confirm('¿Eliminar este participante?')) {
+                artistsData = artistsData.filter(a => a.id !== id);
+                renderAdminTable();
+                renderPublicView();
+            }
+        }
+
+        // GUARDAR TODO
+        function saveAllChanges() {
+            localStorage.setItem('artistsData', JSON.stringify(artistsData));
+            localStorage.setItem('votingOpen', JSON.stringify(votingOpen));
+            renderPublicView();
+            alert('✅ ¡TODO GUARDADO!');
+        }
+
+        // RENDERIZAR VISTA PÚBLICA (SIN CONTADOR DE VOTOS)
+        function renderPublicView() {
+            const container = document.getElementById('artistsContainer');
+            container.innerHTML = '';
+
+            artistsData.forEach(artist => {
+                const isSentenced = artist.sentenced;
+                const statusClass = isSentenced ? 'sentenced' : 'safe';
+                const statusIcon = isSentenced ? '⚠️' : '✓';
+                const mpLink = isSentenced ? artist.mpLinkSentenced : artist.mpLinkSafe;
+                
+                const sentencedLabel = isSentenced ? 
+                    '<div class="sentenced-label">⚠️ SENTENCIADO - VOTO VALE DOBLE ⚠️</div>' : '';
+
+                const card = document.createElement('div');
+                card.className = 'artist-card';
+                
+                card.innerHTML = `
+                    <div class="status-badge ${statusClass}">${statusIcon}</div>
+                    <img src="${artist.image}" alt="${artist.name}" class="artist-image" onerror="this.src='https://via.placeholder.com/400x400?text=Sin+Foto'">
+                    <div class="artist-info">
+                        <div class="artist-name">${artist.name}</div>
+                        ${sentencedLabel}
+                        <a href="${mpLink}" target="_blank" class="vote-btn ${statusClass}">
+                            VOTAR
+                        </a>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+
+            updatePublicVotingStatus();
+        }
+
+        // INICIAR
+        renderPublicView();
+    </script>
+
+</body>
+</html>
